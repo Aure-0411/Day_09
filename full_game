@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+import sys
+import random
+import pygame
+
+if len(sys.argv) == 1:
+    print("Error: missing argument", file=sys.stderr)
+    sys.exit()
+
+nom_fichier = sys.argv[1]
+
+try:
+    fichier = open(nom_fichier)
+except FileNotFoundError:
+    print("Error: file not found", file=sys.stderr)
+    sys.exit()
+
+lignes = fichier.readlines()
+mots = []
+for ligne in lignes:
+    mot = ligne.strip()
+    if mot != "":
+        mots.append(mot)
+
+if len(mots) == 0:
+    print("Error: empty or invalid file", file=sys.stderr)
+    sys.exit()
+
+secret_word = random.choice(mots).lower()
+
+def secret_letters(secret_word, lettres_trouvees):
+    n = len(secret_word)
+    resultat = ""
+    for i in range(n):
+        if lettres_trouvees[i] == "_":
+            resultat += "_ "
+        else:
+            resultat += lettres_trouvees[i] + " "
+    return resultat
+
+def penalties(letter, secret_word, penalites):
+    if letter not in secret_word:
+        penalites = penalites + 1
+    return penalites
+
+def reveal(letter, secret_word, lettres_trouvees):
+    for i in range(len(secret_word)):
+        if secret_word[i] == letter:
+            lettres_trouvees[i] = letter
+
+def draw_pendu(surface, couleur, penalites):
+    if penalites >= 1:
+        pygame.draw.line(surface, couleur, (100, 500), (200, 500), 3)  # pieds de la potence
+    if penalites >= 2:
+        pygame.draw.line(surface, couleur, (150, 500), (150, 150), 3)  # pilier
+    if penalites >= 3:
+        pygame.draw.line(surface, couleur, (150, 150), (350, 150), 3)  # bras de la potence
+    if penalites >= 4:
+        pygame.draw.line(surface, couleur, (150, 200), (250, 150), 3)  # équerre de soutien
+    if penalites >= 5:
+        pygame.draw.line(surface, couleur, (350, 150), (350, 200), 3)  # corde
+    if penalites >= 6:
+        pygame.draw.circle(surface, couleur, (350, 220), 20, 3)  # tête
+    if penalites >= 7:
+        pygame.draw.line(surface, couleur, (350, 240), (350, 300), 3)  # buste
+    if penalites >= 8:
+        pygame.draw.line(surface, couleur, (350, 250), (320, 280), 3)  # bras gauche
+    if penalites >= 9:
+        pygame.draw.line(surface, couleur, (350, 250), (380, 280), 3)  # bras droit
+    if penalites >= 10:
+        pygame.draw.line(surface, couleur, (350, 300), (325, 340), 3)  # jambe gauche
+    if penalites >= 11:
+        pygame.draw.line(surface, couleur, (350, 300), (375, 340), 3)  # jambe droite
+
+pygame.init()
+fenetre = pygame.display.set_mode((600, 600))
+
+image = pygame.image.load("images/background.png")
+police = pygame.font.Font(None, 50)
+
+image = pygame.image.load("images/background.png")
+image = pygame.transform.scale(image, (600, 600))
+
+lettres_trouvees = ["_"] * len(secret_word)
+essais = 0
+penalites = 0
+partie_en_cours = True
+
+running = True
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN and partie_en_cours:
+            letter = event.unicode.lower()
+            penalites = penalties(letter, secret_word, penalites)
+            reveal(letter, secret_word, lettres_trouvees)
+            essais = essais + 1
+            if "_" not in lettres_trouvees or penalites >= 11:
+                partie_en_cours = False
+
+    fenetre.blit(image, (0, 0))
+    draw_pendu(fenetre, (0, 0, 0), penalites)
+
+    texte_mot = police.render(secret_letters(secret_word, lettres_trouvees), True, (255, 255, 255))
+    fenetre.blit(texte_mot, (50, 100))
+
+    texte_penalites = police.render("Penalties : " + str(penalites), True, (255, 0, 0))
+    fenetre.blit(texte_penalites, (50, 200))
+
+    if not partie_en_cours:
+        if "_" not in lettres_trouvees:
+            message = "You win! Word: " + secret_word
+        else:
+            message = "You lose! Word: " + secret_word
+        texte_fin = police.render(message, True, (255, 255, 0))
+        fenetre.blit(texte_fin, (30, 300))
+
+    pygame.display.flip()
