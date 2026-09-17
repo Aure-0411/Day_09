@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+import sys
+import random
+
+if len(sys.argv) == 1:
+    print("Error: missing argument", file=sys.stderr)
+    sys.exit()
+
+nom_fichier = sys.argv[1]
+
+try:
+    fichier = open(nom_fichier)
+except FileNotFoundError:
+    print("Error: file not found", file=sys.stderr)
+    sys.exit()
+
+lignes = fichier.readlines()
+mots = []
+for ligne in lignes:
+    mot = ligne.strip()
+    if mot != "":
+        mots.append(mot)
+
+if len(mots) == 0:
+    print("Error: empty or invalid file", file=sys.stderr)
+    sys.exit()
+
+print(random.choice(mots))
