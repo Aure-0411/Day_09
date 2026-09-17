@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+
+import sys
+import random
+import datetime
+
+if len(sys.argv) == 1:
+    print("Error: missing argument", file=sys.stderr)
+    sys.exit()
+
+nom_fichier = sys.argv[1]
+
+try:
+    fichier = open(nom_fichier)
+except FileNotFoundError:
+    print("Error: file not found", file=sys.stderr)
+    sys.exit()
+
+lignes = fichier.readlines()
+mots = []
+for ligne in lignes:
+    mot = ligne.strip()
+    if mot != "":
+        mots.append(mot)
+
+if len(mots) == 0:
+    print("Error: empty or invalid file", file=sys.stderr)
+    sys.exit()
+
+secret_word = random.choice(mots).lower()
+
+def brick(chaine):
+    n = len(chaine)
+    resultat = ""
+    for _ in range(n):
+        resultat += "_ "
+    return(resultat)
+
+def secret_letters(secret_word, lettres_trouvees):
+    n = len(secret_word)
+    resultat = ""
+    for i in range(n):
+        if lettres_trouvees[i] == "_":
+            resultat += "_ "
+        else:
+            resultat += lettres_trouvees[i] + " "
+    return(resultat)
+
+def penalties(letter, secret_word, penalites):
+    if letter not in secret_word:
+        penalites = penalites + 1
+        print("You've been given a penalty!")
+    return penalites
+
+
+def reveal(letter, secret_word, lettres_trouvees):
+    for i in range(len(secret_word)):
+        if secret_word[i] == letter:
+            lettres_trouvees[i] = letter
+
+lettres_trouvees = ["_"] * len(secret_word)
+essais = 0
+penalites = 0
+
+while "_" in lettres_trouvees and penalites < 12:
+    letter = input("Enter a letter : ").lower()
+    penalites = penalties(letter, secret_word, penalites)
+    reveal(letter, secret_word, lettres_trouvees)
+    essais = essais + 1
+    print(secret_letters(secret_word, lettres_trouvees))
+    print("Penalties : ", penalites)
+
+print(secret_word)
+
+if "_" not in lettres_trouvees:
+    try:
+        fichier_score = open("highscore.txt")
+        ligne = fichier_score.readline()
+        fichier_score.close()
+        ancien_essais, ancienne_date = ligne.strip().split(",")
+        ancien_essais = int(ancien_essais)
+    except FileNotFoundError:
+        ancien_essais = None
+        ancienne_date = None
+
+    if ancien_essais is None or essais < ancien_essais:
+        date_du_jour = datetime.date.today()
+        fichier_score = open("highscore.txt", "w")
+        fichier_score.write(str(essais) + "," + str(date_du_jour))
+        fichier_score.close()
+        print("Best ever! You guessed '" + secret_word + "' in " + str(essais) + " attempts..")
+    else:
+        print("You guessed '" + secret_word + "' in " + str(essais) + " attempts, but the record from " + ancienne_date + " is " + str(ancien_essais) + " attempts .")
+elif penalites >= 12:
+    print("You lose!")
+
