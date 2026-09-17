@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+
+import sys
+import random
+
+if len(sys.argv) == 1:
+    print("Error: missing argument", file=sys.stderr)
+    sys.exit()
+
+nom_fichier = sys.argv[1]
+
+try:
+    fichier = open(nom_fichier)
+except FileNotFoundError:
+    print("Error: file not found", file=sys.stderr)
+    sys.exit()
+
+lignes = fichier.readlines()
+mots = []
+for ligne in lignes:
+    mot = ligne.strip()
+    if mot != "":
+        mots.append(mot)
+
+if len(mots) == 0:
+    print("Error: empty or invalid file", file=sys.stderr)
+    sys.exit()
+
+secret_word = random.choice(mots)
+
+def brick(chaine):
+    n = len(chaine)
+    resultat = ""
+    for _ in range(n):
+        resultat += "_ "
+    return(resultat)
+
+def secret_letters(secret_word, lettres_trouvees):
+    n = len(secret_word)
+    resultat = ""
+    for i in range(n):
+        if lettres_trouvees[i] == "_":
+            resultat += "_ "
+        else:
+            resultat += lettres_trouvees[i] + " "
+    return(resultat)
+
+def penalties(letter, secret_word, penalites):
+    if letter not in secret_word:
+        penalites = penalites + 1
+        print("You've been given a penalty!")
+    return penalites
+
+
+def reveal(letter, secret_word, lettres_trouvees):
+    for i in range(len(secret_word)):
+        if secret_word[i] == letter:
+            lettres_trouvees[i] = letter
+
+
+lettres_trouvees = ["_"] * len(secret_word)
+penalites = 0
+
+while "_" in lettres_trouvees and penalites < 12:
+    letter = input("Enter a letter : ").lower()
+    penalites = penalties(letter, secret_word, penalites)
+    reveal(letter, secret_word, lettres_trouvees)
+    print(secret_letters(secret_word, lettres_trouvees))
+    print("Penalties : ", penalites)
+
+
+print(secret_word)
+
+if "_" not in lettres_trouvees:
+    print("You win!")
+elif penalites >= 12:
+    print("You lose!")
